@@ -4,11 +4,16 @@
   "version": "1.0",
   "description": "Adds a team select menu instead of going to your first team.",
   "permissions": [
-    "scripting"
+    "scripting",
+    "cookies",
+    "storage"
   ],
   "host_permissions": [
     "https://thunderstore.io/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": [
