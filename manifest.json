@@ -4,7 +4,6 @@
   "version": "1.0",
   "description": "Adds a team select menu instead of going to your first team.",
   "permissions": [
-    "scripting",
     "cookies",
     "storage"
   ],
