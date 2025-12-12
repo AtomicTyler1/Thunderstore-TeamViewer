@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Thunderstore Team Selector",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Adds a team select menu instead of going to your first team.",
   "permissions": [
     "cookies",
     "storage"
   ],
   "host_permissions": [
-    "https://thunderstore.io/*"
+    "https://thunderstore.io/*",
+    "https://new.thunderstore.io/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -19,6 +20,12 @@
         "https://thunderstore.io/*"
       ],
       "js": ["content.js"]
+    },
+    {
+      "matches": [
+        "https://new.thunderstore.io/*"
+      ],
+      "js": ["new_content.js"]
     }
   ],
   "icons": {

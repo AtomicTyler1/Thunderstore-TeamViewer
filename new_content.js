@@ -2,16 +2,16 @@ const CACHE_DURATION_MS = 6 * 60 * 60 * 1000;
 const CACHE_KEY = "thunderstore_teams_cache";
 
 let STYLE_CONFIG = {
-    BACKGROUND_COLOR: "#f8f9fa",
-    ACCENT_COLOR: "#007bff",
-    NAV_TEXT_COLOR: "#fff",
-    DROPDOWN_TEXT_COLOR: "#343a40",
+    BACKGROUND_COLOR: "#191b38ff",
+    ACCENT_COLOR: "#76e4c7",
+    NAV_TEXT_COLOR: "#f8f9fa",
+    DROPDOWN_TEXT_COLOR: "#f8f9fa",
     MEMBER_COLOR: "#2ecc71",
     OWNER_COLOR: "#ffbe5d",
-    BORDER_COLOR: "rgba(0, 0, 0, 0.1)",
+    BORDER_COLOR: "rgba(61, 61, 127, 0.44)",
     ERROR_COLOR: "#dc3545",
-    HOVER_COLOR: "rgba(0, 0, 0, 0.05)",
-    LIGHT_TEXT_COLOR: "#6c757d" 
+    HOVER_COLOR: "rgba(255, 255, 255, 0.08)",
+    LIGHT_TEXT_COLOR: "#a3b3c9"
 };
 
 const getComputedStyleColor = (selector, property) => {
@@ -22,31 +22,49 @@ const getComputedStyleColor = (selector, property) => {
     return null;
 };
 
-const initializeStyles = () => {
-    const newBg = getComputedStyleColor(".navbar.bg-light", "background-color");
-    if (newBg) {
-        STYLE_CONFIG.BACKGROUND_COLOR = newBg;
-        STYLE_CONFIG.DROPDOWN_TEXT_COLOR = "#343a40"; 
-        STYLE_CONFIG.BORDER_COLOR = "rgba(0, 0, 0, 0.125)"; 
-        STYLE_CONFIG.HOVER_COLOR = "rgba(0, 0, 0, 0.05)"; 
+const getCssVariable = (variableName) => {
+    return window.getComputedStyle(document.documentElement).getPropertyValue(variableName)?.trim();
+}
+
+function lightenColor(color, amount = 0.25) {
+    let r, g, b;
+
+    if (color.startsWith("rgb")) {
+        const parts = color.match(/\d+/g).map(Number);
+        [r, g, b] = parts;
+    } else if (color.startsWith("#")) {
+        const bigint = parseInt(color.slice(1), 16);
+        r = (bigint >> 16) & 255;
+        g = (bigint >> 8) & 255;
+        b = bigint & 255;
     } else {
-         STYLE_CONFIG.BACKGROUND_COLOR = "#343a40"; 
-         STYLE_CONFIG.DROPDOWN_TEXT_COLOR = "#f8f9fa";
-         STYLE_CONFIG.BORDER_COLOR = "rgba(255, 255, 255, 0.125)";
-         STYLE_CONFIG.HOVER_COLOR = "rgba(255, 255, 255, 0.08)";
+        return color;
     }
 
-    const newAccent = getComputedStyleColor(".alert-info", "background-color");
-    if (newAccent) {
-        STYLE_CONFIG.ACCENT_COLOR = newAccent;
-    }
+    const lighten = c => Math.min(255, Math.floor(c + (255 - c) * amount));
 
-    const navText = getComputedStyleColor(".navbar.bg-primary .nav-link", "color");
-    if (navText) {
-        STYLE_CONFIG.NAV_TEXT_COLOR = "rgba(255, 255, 255, 0.85)";
+    return `rgb(${lighten(r)}, ${lighten(g)}, ${lighten(b)})`;
+}
+
+const initializeStyles = () => {
+    
+    const newBgFromContainer = getComputedStyleColor(".container.container--x.island-item.navigation-header", "background-color");
+    if (newBgFromContainer) {
+        STYLE_CONFIG.BACKGROUND_COLOR = newBgFromContainer;
     }
     
-    console.log("Team Viewer: Styles initialized:", STYLE_CONFIG);
+    const newAccent = getComputedStyleColor(".button.button--call-to-action", "background-color");
+    if (newAccent) {
+        STYLE_CONFIG.ACCENT_COLOR = lightenColor(newAccent, 0.2); 
+    }
+    
+    const itemColor = getComputedStyleColor(".navigation-header__dropdown-item", "color");
+    if (itemColor) {
+        STYLE_CONFIG.DROPDOWN_TEXT_COLOR = itemColor;
+        STYLE_CONFIG.NAV_TEXT_COLOR = itemColor;
+    }
+
+    console.log("Team Viewer (Beta): Styles initialized:", STYLE_CONFIG);
 };
 
 const createDropdownContainer = () => {
@@ -54,22 +72,21 @@ const createDropdownContainer = () => {
 
     Object.assign(container.style, {
         position: "absolute",
-        backgroundColor: STYLE_CONFIG.BACKGROUND_COLOR,
+        backgroundColor: "#191b38ff",
         border: `1px solid ${STYLE_CONFIG.BORDER_COLOR}`,
         borderRadius: "6px",
         padding: "5px 0",
         color: STYLE_CONFIG.DROPDOWN_TEXT_COLOR,
         zIndex: "10000",
         display: "none",
-        marginTop: "10px",
+        marginTop: "0",
         minWidth: "280px",
-        boxShadow: "0 6px 16px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)",
-        transform: "translateY(-10px)",
+        boxShadow: "0 6px 16px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.15)", 
+        transform: "translateX(10px)",
         opacity: "0",
         transition: "opacity 0.2s ease-out, transform 0.2s ease-out, border 0.2s, box-shadow 0.2s",
     });
 
-    document.body.appendChild(container);
     return container;
 };
 
@@ -77,26 +94,29 @@ const showDropdown = (dropdown, navLink) => {
     dropdown.style.display = "block";
     const rect = navLink.getBoundingClientRect();
     
-    const left = rect.left + rect.width / 2 - dropdown.offsetWidth / 2;
+    const top = rect.top + window.scrollY;
+    const left = rect.left - dropdown.offsetWidth - 10; 
 
-    dropdown.style.top = `${rect.bottom + window.scrollY + 5}px`;
+    dropdown.style.top = `${top}px`;
     dropdown.style.left = `${left}px`;
 
+
     setTimeout(() => {
-        dropdown.style.transform = "translateY(0)";
+        dropdown.style.transform = "translateX(0)";
         dropdown.style.opacity = "1";
-        dropdown.style.border = `1px solid ${STYLE_CONFIG.ACCENT_COLOR}`;
-        dropdown.style.boxShadow = `0 6px 16px rgba(0, 0, 0, 0.15), 0 0 0 1px ${STYLE_CONFIG.ACCENT_COLOR}`;
     }, 10);
 };
 
-const hideDropdown = (dropdown) => {
+const hideAndRemoveDropdown = (dropdown) => {
+    if (!dropdown || !dropdown.parentNode) return;
+
     dropdown.style.border = `1px solid ${STYLE_CONFIG.BORDER_COLOR}`;
-    dropdown.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)";
-    dropdown.style.transform = "translateY(-10px)";
+    dropdown.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.15)";
+    dropdown.style.transform = "translateX(10px)";
     dropdown.style.opacity = "0";
+    
     setTimeout(() => {
-        dropdown.style.display = "none";
+        dropdown.remove();
     }, 200);
 };
 
@@ -136,7 +156,7 @@ const getRoleIconSvg = (role) => {
 }
 
 
-const renderTeamsDropdown = (container, teams, originalHref, onRefreshClick) => {
+const renderTeamsDropdown = (container, teams, onRefreshClick) => {
     container.innerHTML = "";
     container.style.padding = "0";
 
@@ -150,13 +170,14 @@ const renderTeamsDropdown = (container, teams, originalHref, onRefreshClick) => 
         borderBottom: `1px solid ${STYLE_CONFIG.BORDER_COLOR}`, 
         padding: "10px 15px 8px 15px",
         marginBottom: "0",
-    });
+    }, null, "<h3>YOUR TEAMS</h3>");
 
-    createAndAppend(headerWrapper, 'h3', {
+    const headerText = headerWrapper.querySelector('h3');
+    Object.assign(headerText.style, {
         margin: "0", fontSize: "0.9em", fontWeight: "700", letterSpacing: "0.5px", 
         color: STYLE_CONFIG.ACCENT_COLOR, 
         textTransform: "uppercase",
-    }, "YOUR TEAMS");
+    });
 
     const refreshButton = createAndAppend(headerWrapper, 'button', {
         backgroundColor: "transparent", 
@@ -206,7 +227,7 @@ const renderTeamsDropdown = (container, teams, originalHref, onRefreshClick) => 
 
         const teamNameSpan = createAndAppend(teamNameWrapper, 'span', { 
             fontWeight: "500", 
-            color: STYLE_CONFIG.ACCENT_COLOR,
+            color: STYLE_CONFIG.ACCENT_COLOR, 
             marginTop: "1px", 
             fontSize: "1em",
         }, team.name);
@@ -231,23 +252,18 @@ const renderTeamsDropdown = (container, teams, originalHref, onRefreshClick) => 
             memberCountSpan.style.color = STYLE_CONFIG.NAV_TEXT_COLOR;
             
             setTimeout(() => {
-                let newUrl;
-                if (originalHref.includes("/package/")) {
-                    newUrl = `${window.location.origin}/package/${team.name}`;
-                } else {
-                    const communityMatch = originalHref.match(/\/c\/([^/]+)/);
-                    newUrl = communityMatch
-                        ? `${window.location.origin}/c/${communityMatch[1]}/p/${team.name}`
-                        : `${window.location.origin}/c/${team.name}`;
-                }
+                const communityMatch = window.location.href.match(/\/c\/([^/]+)/);
+                const communitySlug = communityMatch ? communityMatch[1] : 'valheim'; 
+
+                const newUrl = `${window.location.origin}/c/${communitySlug}/p/${team.name}`;
+                
                 window.location.href = newUrl;
             }, 100);
         });
     });
 };
 
-const loadTeams = async (useCache = true) => {
-    const dropdown = document.querySelector("#thunderstore-team-dropdown");
+const loadTeams = async (dropdown, useCache = true) => {
     if (!dropdown) return;
 
     dropdown.innerHTML = "";
@@ -260,13 +276,13 @@ const loadTeams = async (useCache = true) => {
     try {
         const response = await chrome.runtime.sendMessage({ action: "fetchTeams", useCache });
         
-        const onRefresh = () => loadTeams(false);
+        const onRefresh = () => loadTeams(dropdown, false);
 
         if (response.status === "success") {
-            console.log("Team Viewer: Teams loaded successfully via background script.");
-            renderTeamsDropdown(dropdown, response.teams, dropdown.dataset.originalHref, onRefresh);
+            console.log("Team Viewer (Beta): Teams loaded successfully via background script.");
+            renderTeamsDropdown(dropdown, response.teams, onRefresh);
         } else {
-            console.error("Team Viewer: Failed to fetch teams:", response.message);
+            console.error("Team Viewer (Beta): Failed to fetch teams:", response.message);
             createAndAppend(dropdown, 'p', { 
                 textAlign: "center", 
                 color: STYLE_CONFIG.ERROR_COLOR, 
@@ -274,7 +290,7 @@ const loadTeams = async (useCache = true) => {
             }, `Error: ${response.message}`);
         }
     } catch (error) {
-        console.error("Team Viewer: Error communicating with background script:", error);
+        console.error("Team Viewer (Beta): Error communicating with background script:", error);
         createAndAppend(dropdown, 'p', { 
             textAlign: "center", 
             color: STYLE_CONFIG.ERROR_COLOR, 
@@ -283,63 +299,96 @@ const loadTeams = async (useCache = true) => {
     }
 };
 
+const cleanUpOldElements = () => {
+    const teamsLink = document.querySelector('a.link.dropdown__item.navigation-header__dropdown-item[data-teams-initialized="true"]');
+    if (teamsLink) {
+        teamsLink.removeAttribute('data-teams-initialized');
+        teamsLink.style.removeProperty('cursor');
+        teamsLink.setAttribute('href', '/settings/teams/'); 
+    }
+};
 
-const observer = new MutationObserver((_, obs) => {
+const initTeamSelector = () => {
     initializeStyles(); 
 
-    const navLink = Array.from(document.querySelectorAll("a.nav-link.text-dark"))
-        .find(link => link.href?.includes("/package/") || link.href?.includes("/c/"));
+    const teamsLink = Array.from(document.querySelectorAll("a.link.dropdown__item.navigation-header__dropdown-item"))
+        .find(link => link.href?.includes("/settings/teams/") && !link.hasAttribute('data-teams-initialized'));
 
-    if (!navLink) return;
-
-    console.log("Team Viewer: Found navigation link. Initializing script.");
-    obs.disconnect();
-
-    navLink.style.color = STYLE_CONFIG.NAV_TEXT_COLOR;
-    navLink.style.transition = 'color 0.15s ease-in-out';
-    navLink.addEventListener('mouseenter', () => navLink.style.color = 'rgba(255, 255, 255, 0.75)');
-    navLink.addEventListener('mouseleave', () => navLink.style.color = STYLE_CONFIG.NAV_TEXT_COLOR);
-
-    const originalHref = navLink.href;
-    navLink.removeAttribute("href");
-    navLink.style.cursor = "pointer";
-
-    const dropdown = createDropdownContainer();
-    dropdown.id = "thunderstore-team-dropdown";
-    dropdown.dataset.originalHref = originalHref;
+    if (!teamsLink) return;
     
-    let isVisible = false;
+    teamsLink.setAttribute('data-teams-initialized', 'true'); 
+
+    console.log("Team Viewer (Beta): Found Teams navigation link. Initializing script.");
+
+    teamsLink.removeAttribute("href");
+    teamsLink.style.cursor = "pointer";
+
+    let currentDropdown = null;
 
     const handleResizeAndReposition = () => {
-        if (isVisible) showDropdown(dropdown, navLink);
+        if (currentDropdown) showDropdown(currentDropdown, teamsLink);
     };
 
-    navLink.addEventListener("click", async (event) => {
-        event.preventDefault();
-        isVisible = !isVisible;
+    const closeDropdown = () => {
+        if (currentDropdown) {
+            hideAndRemoveDropdown(currentDropdown);
+            currentDropdown = null;
+            window.removeEventListener("resize", handleResizeAndReposition);
+        }
+    }
 
-        if (isVisible) {
-            console.log("Team Viewer: Showing dropdown.");
-            showDropdown(dropdown, navLink);
-            if (!dropdown.querySelector('ul') || dropdown.querySelector('p')?.textContent.includes('Error')) {
-                 loadTeams(true);
-            }
-            window.addEventListener("resize", handleResizeAndReposition);
+    teamsLink.addEventListener("click", async (event) => {
+        event.preventDefault(); 
+        event.stopPropagation();
+
+        if (currentDropdown) {
+            console.log("Team Viewer (Beta): Hiding and removing dropdown.");
+            closeDropdown();
         } else {
-            console.log("Team Viewer: Hiding dropdown.");
-            hideDropdown(dropdown);
-            window.removeEventListener("resize", handleResizeAndReposition);
+            console.log("Team Viewer (Beta): Creating and showing dropdown.");
+            
+            const newDropdown = createDropdownContainer();
+            newDropdown.id = "thunderstore-team-dropdown";
+            document.body.appendChild(newDropdown);
+            currentDropdown = newDropdown;
+            
+            loadTeams(currentDropdown, true); 
+
+            showDropdown(currentDropdown, teamsLink);
+            
+            window.addEventListener("resize", handleResizeAndReposition);
+        }
+    });
+    
+    document.addEventListener("click", (e) => {
+        if (!currentDropdown) return;
+        const isClickInside = teamsLink.contains(e.target) || currentDropdown.contains(e.target);
+
+        if (!isClickInside) {
+            closeDropdown();
         }
     });
 
-    document.addEventListener("click", (e) => {
-        const isClickInside = navLink.contains(e.target) || dropdown.contains(e.target);
-        if (!isClickInside && isVisible) {
-            isVisible = false;
-            hideDropdown(dropdown);
-            window.removeEventListener("resize", handleResizeAndReposition);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeDropdown();
         }
     });
+};
+
+const observer = new MutationObserver((_, obs) => {
+    const teamsLink = document.querySelector('a.link.dropdown__item.navigation-header__dropdown-item[href*="/settings/teams/"]:not([data-teams-initialized="true"])');
+    if (teamsLink) {
+        initTeamSelector();
+    }
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
+
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        console.log("Team Viewer (Beta): pageshow event detected (persisted). Re-initializing.");
+        cleanUpOldElements(); 
+        initTeamSelector();
+    }
+});
